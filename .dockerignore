@@ -1,0 +1,32 @@
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+.git/
+.env.local
+.env.production
+*.log
+
+# Backups
+backups/*.sql
+
+# SSL certificates (si decides usar HTTPS)
+ssl/
+*.pem
+*.key
+*.crt
+
+# Archivos temporales
+*.tmp
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

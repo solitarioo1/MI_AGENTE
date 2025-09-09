@@ -1,0 +1,42 @@
+{
+  "name": "Agente Asistente Personal",
+  "version": "1.0.0",
+  "description": "Sistema automatizado para gestión de reuniones con WhatsApp y Google Sheets",
+  "main": "docker-compose.yml",
+  "scripts": {
+    "start": "docker-compose up -d",
+    "stop": "docker-compose down",
+    "restart": "docker-compose down && docker-compose up -d",
+    "logs": "docker-compose logs -f",
+    "status": "docker-compose ps",
+    "backup": "docker-compose exec postgres pg_dump -U n8n -d n8n > backups/backup_$(date +%Y%m%d_%H%M%S).sql",
+    "install-mistral": "docker exec agente_ollama_1 ollama pull mistral:7b",
+    "test": "docker-compose exec ollama ollama run mistral:7b 'Hola mundo'",
+    "clean": "docker system prune -f",
+    "setup": "chmod +x scripts/*.sh && ./scripts/install.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tu-usuario/agente-asistente.git"
+  },
+  "keywords": [
+    "ai",
+    "assistant",
+    "whatsapp",
+    "google-sheets",
+    "n8n",
+    "ollama",
+    "automation",
+    "docker",
+    "calendar",
+    "meetings"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "engines": {
+    "docker": ">=20.0.0",
+    "docker-compose": ">=1.25.0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
