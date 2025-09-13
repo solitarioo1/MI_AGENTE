@@ -1,4 +1,50 @@
 
 
+# Archivos de entorno y credenciales
+.env
+.env.local
+.env.production
+.env.backup
+
+# Certificados SSL
+ssl/
+*.pem
+*.key
+*.crt
+
+# Backups de base de datos
+backups/
+*.sql
+*.dump
+
+# Logs
+logs/
+*.log
+
+# Volúmenes de Docker
+volumes/
+
+# Archivos temporales
+.tmp/
+temp/
+*.tmp
+
+# Archivos específicos del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Node modules si se usan
+node_modules/
+
+# Archivos IDE/Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md

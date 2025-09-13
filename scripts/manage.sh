@@ -53,13 +53,13 @@ case "$1" in
     
     install-mistral)
         echo "🧠 Instalando modelo Mistral 7B..."
-        docker exec agente_ollama_1 ollama pull mistral:7b
+        docker-compose exec ollama ollama pull mistral:7b
         echo "✅ Mistral 7B instalado"
         ;;
     
     test-ollama)
         echo "🧪 Probando Ollama..."
-        docker exec agente_ollama_1 ollama run mistral:7b "Hola, soy tu asistente personal. ¿Cómo puedo ayudarte?"
+        docker-compose exec ollama ollama run mistral:7b "Hola, soy tu asistente personal. ¿Cómo puedo ayudarte?"
         ;;
     
     clean)
