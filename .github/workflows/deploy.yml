@@ -1,0 +1,64 @@
+name: 🚀 Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔐 Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+        
+    - name: 🚀 Deploy to VPS
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          echo "🔄 Iniciando deploy automático..."
+          
+          # Ir al directorio del proyecto
+          cd ~/MI_AGENTE
+          
+          # Backup de .env por seguridad
+          cp .env .env.backup
+          
+          # Actualizar código
+          echo "📥 Actualizando código desde GitHub..."
+          git stash
+          git pull origin main
+          git stash pop
+          
+          # Rebuild y restart contenedores
+          echo "🐳 Actualizando contenedores..."
+          docker-compose down
+          docker-compose pull
+          docker-compose up -d --build
+          
+          # Verificar estado
+          echo "✅ Verificando servicios..."
+          sleep 10
+          docker-compose ps
+          
+          # Test de conectividad
+          echo "🧪 Probando conectividad..."
+          curl -f http://localhost:8090/health || echo "⚠️ Health check falló"
+          
+          echo "🎉 Deploy completado!"
+        EOF
+        
+    - name: 📊 Notify Success
+      if: success()
+      run: |
+        echo "✅ Deploy exitoso a https://miagentepersonal.me:8443"
+        
+    - name: 🚨 Notify Failure
+      if: failure()
+      run: |
+        echo "❌ Deploy falló - revisar logs"

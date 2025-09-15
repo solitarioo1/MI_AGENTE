@@ -1,6 +1,9 @@
-# 🤖 **AGENTE ASISTENTE PERSONAL - Plan de Desarrollo**
+# 🤖 **AGENTE ASISTENTE PERSONAL** 
 
 > Sistema automatizado para gestión de reuniones con notificaciones WhatsApp y Google Sheets
+
+[![Deploy Status](https://github.com/solitarioo1/MI_AGENTE/actions/workflows/deploy.yml/badge.svg)](https://github.com/solitarioo1/MI_AGENTE/actions)
+🌐 **En vivo:** [https://miagentepersonal.me:8443](https://miagentepersonal.me:8443)
 
 ## 🎯 **OBJETIVO**
 Crear un agente que:
@@ -9,6 +12,7 @@ Crear un agente que:
 - ✅ Gestione Google Sheets
 - ✅ Envíe/reciba correos
 - ✅ **100% GRATUITO**
+- 🚀 **Deploy automático con GitHub Actions**
 
 ## 📦 **ARQUITECTURA DE CONTENEDORES**
 
@@ -202,6 +206,32 @@ N8N_BASIC_AUTH_PASSWORD=CAMBIAR_PASSWORD
 - 🔄 **Cron jobs** (recordatorios programados)
 - 📊 **Redis** (cache - opcional)
 - 📝 **Logs centralizados**
+
+## 🚀 **GITHUB ACTIONS - DEPLOY AUTOMÁTICO**
+
+### **🎯 Flujo de Desarrollo:**
+```bash
+# 1. Desarrollar localmente
+git add .
+git commit -m "Nueva feature"
+git push origin main
+# 🚀 Deploy automático se ejecuta!
+```
+
+### **⚙️ Configuración (una vez):**
+1. **Agregar secretos** en GitHub:
+   - `VPS_HOST`: `172.206.16.218`
+   - `VPS_USER`: `SOLITARIOfeliz`
+   - `VPS_SSH_KEY`: `[Tu clave SSH privada]`
+
+2. **Ejecutar setup:**
+```bash
+./scripts/setup-github-actions.sh
+```
+
+### **📊 Monitoreo:**
+- **Actions**: [github.com/solitarioo1/MI_AGENTE/actions](https://github.com/solitarioo1/MI_AGENTE/actions)
+- **Docs completas**: [`GITHUB-ACTIONS.md`](./GITHUB-ACTIONS.md)
 
 ## ⚡ **COMANDOS RÁPIDOS VPS**
 
