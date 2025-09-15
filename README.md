@@ -462,3 +462,5 @@ chmod +x scripts/*.sh
 - **HTTP**: `http://172.206.16.218:8090`
 
 **✅ SISTEMA 100% LISTO PARA PRODUCCIÓN**
+#   T e s t   d e p l o y   a u t o m � t i c o  
+ 
