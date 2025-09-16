@@ -42,6 +42,9 @@ services:
       - WEBHOOK_URL=${WEBHOOK_URL}
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - N8N_SECURE_COOKIE=false
+      - GENERIC_TIMEZONE=America/Mexico_City
     ports:
       - "5678:5678"
     volumes:
