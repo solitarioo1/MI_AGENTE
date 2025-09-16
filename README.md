@@ -4,6 +4,7 @@
 
 [![Deploy Status](https://github.com/solitarioo1/MI_AGENTE/actions/workflows/deploy.yml/badge.svg)](https://github.com/solitarioo1/MI_AGENTE/actions)
 🌐 **En vivo:** [https://miagentepersonal.me:8443](https://miagentepersonal.me:8443)
+✅ **SSL Certificado válido** | 🔄 **Auto-deploy activado**
 
 ## 🎯 **OBJETIVO**
 Crear un agente que:
@@ -462,5 +463,6 @@ chmod +x scripts/*.sh
 - **HTTP**: `http://172.206.16.218:8090`
 
 **✅ SISTEMA 100% LISTO PARA PRODUCCIÓN**
-#   T e s t   d e p l o y   a u t o m � t i c o  
+#   T e s t   d e p l o y   a u t o m � t i c o 
+ 
  
