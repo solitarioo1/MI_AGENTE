@@ -462,6 +462,52 @@ chmod +x scripts/*.sh
 - **HTTPS**: `https://172.206.16.218:8443`
 - **HTTP**: `http://172.206.16.218:8090`
 
+---
+
+## 📋 **RECOMENDACIONES PARA PRODUCCIÓN**
+
+### **🔧 Configuraciones de Proxy Reverso**
+- **SIEMPRE usar `$http_host`** en lugar de `$host` cuando trabajas con puertos personalizados
+- **Verificar headers** con `docker logs` antes de buscar errores en la aplicación
+- **Probar variables de entorno** con `docker exec container env | grep VARIABLE`
+
+### **🚀 Pipeline CI/CD - GitHub Actions**
+- ✅ **Tu setup es PRODUCTION-READY** - cambias local, se aplica automáticamente
+- **Monitorear deployments:** [GitHub Actions](https://github.com/solitarioo1/MI_AGENTE/actions)
+- **Backup antes de cambios grandes:** `docker-compose down && docker system prune`
+
+### **🔐 Mantenimiento del VPS**
+- **Programar backups automáticos** de volúmenes Docker
+- **Monitorear espacio en disco:** `df -h`
+- **Logs rotativos:** evitar que crezcan infinitamente
+
+### **⚡ Comandos Útiles para Debugging**
+```bash
+# Verificar recursos del sistema
+docker stats
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Verificar configuración específica
+docker exec mi_agente_n8n_1 env | grep N8N
+
+# Limpiar sistema Docker
+docker system prune -f
+
+# Reinicio completo con recreación
+docker-compose down
+docker-compose up -d --force-recreate
+```
+
+### **🔍 Diagnóstico de Problemas Comunes**
+- **Origin Header Mismatch:** Verificar configuración nginx `proxy_set_header Host`
+- **SSL Certificate Issues:** Renovar certificados Let's Encrypt cada 90 días
+- **Container Health:** Usar `docker ps` para verificar estado de contenedores
+- **Port Conflicts:** Verificar puertos con `netstat -tulpn`
+
+---
+
 **✅ SISTEMA 100% LISTO PARA PRODUCCIÓN**
 #   T e s t   d e p l o y   a u t o m � t i c o 
  
