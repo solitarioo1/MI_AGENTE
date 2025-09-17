@@ -1,0 +1,498 @@
+{
+  "name": "🤖 Agente Grupal WhatsApp - Gestión de Reuniones",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "webhook-whatsapp",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "agente-whatsapp"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.body.message.body}}",
+              "operation": "contains",
+              "value2": "@agente"
+            }
+          ]
+        }
+      },
+      "id": "filtro-menciones",
+      "name": "Filtrar @agente",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer información del mensaje\nconst mensaje = $json.body.message.body;\nconst usuario = $json.body.message.from;\nconst grupo = $json.body.message.chatId;\n\n// Limpiar mensaje y extraer comando\nconst comando = mensaje.replace('@agente', '').trim().toLowerCase();\n\n// Extraer nombre del usuario (sin número de teléfono)\nconst nombreUsuario = $json.body.message.notifyName || usuario.split('@')[0];\n\n// Clasificar tipo de comando\nlet tipoComando = 'consulta';\nif (comando.includes('agendar') || comando.includes('crear')) {\n  tipoComando = 'agendar';\n} else if (comando.includes('borrar') || comando.includes('eliminar') || comando.includes('cancelar')) {\n  tipoComando = 'borrar';\n} else if (comando.includes('mover') || comando.includes('cambiar') || comando.includes('modificar')) {\n  tipoComando = 'modificar';\n} else if (comando.includes('pendiente') || comando.includes('reunión') || comando.includes('evento')) {\n  tipoComando = 'consulta';\n}\n\n// Extraer fechas comunes\nconst fechas = {\n  'lunes': 1, 'martes': 2, 'miércoles': 3, 'jueves': 4, 'viernes': 5,\n  'sábado': 6, 'domingo': 0, 'hoy': new Date().getDay(),\n  'mañana': (new Date().getDay() + 1) % 7\n};\n\nlet fechaDetectada = null;\nfor (const [dia, num] of Object.entries(fechas)) {\n  if (comando.includes(dia)) {\n    fechaDetectada = dia;\n    break;\n  }\n}\n\n// Extraer emails\nconst emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g;\nconst emails = comando.match(emailRegex) || [];\n\nreturn {\n  json: {\n    mensajeOriginal: mensaje,\n    comando: comando,\n    tipoComando: tipoComando,\n    usuario: nombreUsuario,\n    telefono: usuario,\n    grupo: grupo,\n    fechaDetectada: fechaDetectada,\n    emails: emails,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "procesar-comando",
+      "name": "Procesar Comando",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.tipoComando}}",
+              "value2": "consulta"
+            }
+          ]
+        }
+      },
+      "id": "switch-comando",
+      "name": "Switch Comando",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "routing": {
+        "rules": [
+          {
+            "conditions": {
+              "string": [
+                {
+                  "value1": "={{$json.tipoComando}}",
+                  "value2": "consulta"
+                }
+              ]
+            },
+            "renameOutput": true,
+            "outputKey": "consulta"
+          },
+          {
+            "conditions": {
+              "string": [
+                {
+                  "value1": "={{$json.tipoComando}}",
+                  "value2": "agendar"
+                }
+              ]
+            },
+            "renameOutput": true,
+            "outputKey": "agendar"
+          },
+          {
+            "conditions": {
+              "string": [
+                {
+                  "value1": "={{$json.tipoComando}}",
+                  "value2": "modificar"
+                }
+              ]
+            },
+            "renameOutput": true,
+            "outputKey": "modificar"
+          },
+          {
+            "conditions": {
+              "string": [
+                {
+                  "value1": "={{$json.tipoComando}}",
+                  "value2": "borrar"
+                }
+              ]
+            },
+            "renameOutput": true,
+            "outputKey": "borrar"
+          }
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.*, g.nombre as grupo_nombre FROM reuniones r JOIN grupos g ON r.grupo_id = g.id WHERE r.fecha >= CURRENT_DATE AND (r.grupo_id = (SELECT id FROM grupos WHERE chat_id = '{{$json.grupo}}') OR r.participantes LIKE '%{{$json.usuario}}%') ORDER BY r.fecha ASC LIMIT 5"
+      },
+      "id": "consultar-reuniones",
+      "name": "Consultar Reuniones",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 200],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-agente",
+          "name": "PostgreSQL Agente"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "sendHeaders": true,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "model": "mistral",
+          "prompt": "Eres un asistente personal. El usuario {{$json.usuario}} pregunta sobre reuniones pendientes. Aquí están sus próximas reuniones: {{$('consultar-reuniones').all()}}. Responde de forma amigable y concisa en español, mencionando fechas, horarios y temas relevantes. Si no hay reuniones, dilo claramente.",
+          "stream": false
+        }
+      },
+      "id": "generar-respuesta-consulta",
+      "name": "Generar Respuesta IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/generate",
+        "sendHeaders": true,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "model": "mistral",
+          "prompt": "El usuario {{$json.usuario}} quiere agendar: '{{$json.comando}}'. Extrae: 1) Título/tema de la reunión, 2) Fecha (si dice {{$json.fechaDetectada}} convertir a fecha específica), 3) Hora aproximada, 4) Participantes mencionados. Responde en formato JSON: {\"titulo\": \"\", \"fecha\": \"YYYY-MM-DD\", \"hora\": \"HH:MM\", \"participantes\": []}",
+          "stream": false
+        }
+      },
+      "id": "extraer-datos-reunion",
+      "name": "Extraer Datos con IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "schema": "public",
+        "table": "reuniones",
+        "columns": "grupo_id, titulo, fecha, hora, creador, participantes, emails_invitados, estado",
+        "values": "(SELECT id FROM grupos WHERE chat_id = '{{$json.grupo}}'), '{{$json.titulo}}', '{{$json.fecha}}', '{{$json.hora}}', '{{$json.usuario}}', '{{$json.participantes}}', '{{$json.emails}}', 'programada'"
+      },
+      "id": "guardar-reunion",
+      "name": "Guardar en DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-agente",
+          "name": "PostgreSQL Agente"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": "primary",
+        "summary": "{{$json.titulo}}",
+        "start": {
+          "dateTime": "{{$json.fecha}}T{{$json.hora}}:00"
+        },
+        "end": {
+          "dateTime": "{{$json.fecha}}T{{DateTime.fromISO($json.fecha + 'T' + $json.hora).plus({hour: 1}).toFormat('HH:mm')}}:00"
+        },
+        "description": "Reunión creada por {{$json.usuario}} via AgenteBOT\\nParticipantes: {{$json.participantes}}",
+        "location": "Google Meet (se generará automáticamente)"
+      },
+      "id": "crear-evento-calendar",
+      "name": "Crear en Google Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "google-calendar-agente",
+          "name": "Google Calendar Agente"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "subject": "Nueva reunión programada: {{$json.titulo}}",
+        "emailType": "html",
+        "message": "<h2>Nueva Reunión Programada</h2><p><strong>Título:</strong> {{$json.titulo}}</p><p><strong>Fecha:</strong> {{$json.fecha}}</p><p><strong>Hora:</strong> {{$json.hora}}</p><p><strong>Organizador:</strong> {{$json.usuario}}</p><p><strong>Link Meet:</strong> {{$('crear-evento-calendar').json.hangoutLink}}</p><p>Esta reunión fue creada automáticamente por el AgenteBOT.</p>",
+        "toList": "={{$json.emails.join(',')}}"
+      },
+      "id": "enviar-email-invitacion",
+      "name": "Enviar Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1780, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-agente",
+          "name": "Gmail Agente"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8080/webhook/whatsapp-send",
+        "sendHeaders": true,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "chatId": "={{$json.grupo}}",
+          "message": "✅ {{$json.usuario}}, reunión agendada exitosamente:\\n\\n📅 **{{$json.titulo}}**\\n🕒 {{$json.fecha}} a las {{$json.hora}}\\n👥 Participantes: {{$json.participantes}}\\n📧 Emails enviados: {{$json.emails.length}} personas\\n🔗 Link Meet: {{$('crear-evento-calendar').json.hangoutLink}}"
+        }
+      },
+      "id": "responder-whatsapp-agendar",
+      "name": "Responder WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8080/webhook/whatsapp-send",
+        "sendHeaders": true,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "chatId": "={{$json.grupo}}",
+          "message": "={{$('generar-respuesta-consulta').json.response}}"
+        }
+      },
+      "id": "responder-whatsapp-consulta",
+      "name": "Responder WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM reuniones WHERE grupo_id = (SELECT id FROM grupos WHERE chat_id = '{{$json.grupo}}') AND fecha >= CURRENT_DATE ORDER BY fecha ASC"
+      },
+      "id": "buscar-reunion-modificar",
+      "name": "Buscar Reunión",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 400],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-agente",
+          "name": "PostgreSQL Agente"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE reuniones SET fecha = '{{$json.nuevaFecha}}', estado = 'modificada' WHERE id = {{$json.reunionId}} RETURNING *"
+      },
+      "id": "actualizar-reunion",
+      "name": "Actualizar Reunión",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 400],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-agente",
+          "name": "PostgreSQL Agente"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM reuniones WHERE id = {{$json.reunionId}} RETURNING *"
+      },
+      "id": "borrar-reunion",
+      "name": "Borrar Reunión",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 500],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-agente",
+          "name": "PostgreSQL Agente"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log de comando ejecutado\nconst comando = {\n  usuario: $json.usuario,\n  accion: $json.tipoComando,\n  comando_completo: $json.comando,\n  timestamp: new Date().toISOString(),\n  grupo: $json.grupo,\n  exito: true\n};\n\nreturn { json: comando };"
+      },
+      "id": "log-comando",
+      "name": "Log Comando",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2220, 300]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filtrar @agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar @agente": {
+      "main": [
+        [
+          {
+            "node": "Procesar Comando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Comando": {
+      "main": [
+        [
+          {
+            "node": "Switch Comando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Comando": {
+      "main": [
+        [
+          {
+            "node": "Consultar Reuniones",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extraer Datos con IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar Reunión",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Borrar Reunión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Reuniones": {
+      "main": [
+        [
+          {
+            "node": "Generar Respuesta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Respuesta IA": {
+      "main": [
+        [
+          {
+            "node": "Responder WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos con IA": {
+      "main": [
+        [
+          {
+            "node": "Guardar en DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar en DB": {
+      "main": [
+        [
+          {
+            "node": "Crear en Google Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear en Google Calendar": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Email": {
+      "main": [
+        [
+          {
+            "node": "Responder WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Log Comando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-09-16T14:30:00.000Z",
+      "updatedAt": "2025-09-16T14:30:00.000Z",
+      "id": "agente-grupal",
+      "name": "agente-grupal"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-09-16T14:30:00.000Z",
+  "versionId": "1"
+}
