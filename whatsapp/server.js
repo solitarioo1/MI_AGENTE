@@ -4,6 +4,7 @@ const qrcode = require('qrcode-terminal');
 const express = require('express');
 const axios = require('axios');
 const { Client } = require('pg');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -112,7 +113,8 @@ async function startWhatsApp() {
         auth: state,
         printQRInTerminal: true,
         logger: require('pino')({ level: 'info' }),
-        browser: ['MI_AGENTE', 'Chrome', '1.0.0']
+        browser: ['MI_AGENTE', 'Chrome', '1.0.0'],
+        generateHighQualityLinkPreview: true
     });
 
     sock.ev.on('creds.update', saveCreds);
