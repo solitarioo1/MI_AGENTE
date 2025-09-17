@@ -1,5 +1,5 @@
 # WhatsApp Bot Dockerfile
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Instalar dependencias del sistema
 RUN apk add --no-cache \
