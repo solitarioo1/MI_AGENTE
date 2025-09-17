@@ -111,7 +111,8 @@ async function startWhatsApp() {
     sock = makeWASocket({
         auth: state,
         printQRInTerminal: true,
-        logger: require('pino')({ level: 'silent' })
+        logger: require('pino')({ level: 'info' }),
+        browser: ['MI_AGENTE', 'Chrome', '1.0.0']
     });
 
     sock.ev.on('creds.update', saveCreds);
