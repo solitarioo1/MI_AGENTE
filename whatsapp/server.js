@@ -1,5 +1,5 @@
-const makeWASocket = require('@whiskeysockets/baileys').default;
-const { DisconnectReason, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+const makeWASocket = require('baileys').default;
+const { DisconnectReason, useMultiFileAuthState } = require('baileys');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
 const axios = require('axios');
