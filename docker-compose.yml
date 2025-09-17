@@ -4,6 +4,7 @@ volumes:
   postgres_data:
   n8n_data:
   ollama_models:
+  whatsapp_data:
 
 services:
   postgres:
@@ -106,6 +107,32 @@ services:
           memory: 50M
         reservations:
           memory: 30M
+
+  # Servicio WhatsApp Bot
+  whatsapp:
+    build: ./whatsapp
+    depends_on:
+      - postgres
+      - n8n
+    volumes:
+      - whatsapp_data:/app/sessions
+      - ./whatsapp/.env:/app/.env:ro
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - default
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+        reservations:
+          memory: 200M
 
   # Backup automático
   backup:
