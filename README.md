@@ -18,10 +18,12 @@ Crear un agente que:
 ## 📦 **ARQUITECTURA DE CONTENEDORES**
 
 ```
-├── 🔧 n8n (Automatización)
-├── 🗄️ PostgreSQL (Base de datos)
-├── 🧠 Ollama (IA local - gratis)
-└── 🌐 Nginx (Proxy reverso)
+├── 🔧 n8n (Automatización) - Puerto 5678
+├── 🗄️ PostgreSQL (Base de datos) - Puerto 5432
+├── 🧠 Ollama (IA local - gratis) - Puerto 11434
+├── 📱 Evolution API (WhatsApp) - Puerto 8080
+├── 🔧 File Server Dummy - Puerto 8080 (interno)
+└── 🌐 Nginx (Proxy reverso) - Puertos 8090/8443
 ```
 
 ## 🔧 **STACK TECNOLÓGICO GRATUITO**
@@ -31,7 +33,7 @@ Crear un agente que:
 | **Automatización** | n8n | 🆓 | Ilimitado (self-hosted) |
 | **Base de Datos** | PostgreSQL | 🆓 | Ilimitado |
 | **IA/LLM** | Ollama (local) | 🆓 | Recursos de tu VPS |
-| **WhatsApp** | Baileys (Open Source) | 🆓 | **Mensajes ilimitados** |
+| **WhatsApp** | Evolution API | 🆓 | **Mensajes ilimitados** |
 | **Email** | Gmail API | 🆓 | 1B solicitudes/día |
 | **Google Sheets** | Google Sheets API | 🆓 | 100 solicitudes/100seg |
 | **Calendario** | Google Calendar API | 🆓 | 1M solicitudes/día |
@@ -350,11 +352,22 @@ Google Sheets (registra) → WhatsApp (confirma) → Recordatorios automáticos
 
 ## 🌐 **ACCESO AL SISTEMA**
 
-### **URLs de Acceso:**
-- **Principal (HTTPS)**: `https://172.206.16.218:8443`
-- **Alternativo (HTTP)**: `http://172.206.16.218:8090`
-- **API Ollama**: `http://172.206.16.218:8090/ollama`
-- **Health Check**: `http://172.206.16.218:8090/health`
+### **URLs de Acceso (Configuración Azure NSG ✅):**
+- **n8n (Principal)**: `https://miagentepersonal.me:8443` | `http://miagentepersonal.me:8090`
+- **Evolution API**: `http://miagentepersonal.me:8080` (directo) | `https://miagentepersonal.me:8443/evolution/`
+- **Evolution Manager**: `http://miagentepersonal.me:8080/manager`
+- **API Ollama**: `http://miagentepersonal.me:8090/ollama`
+- **Health Check**: `http://miagentepersonal.me:8090/health`
+
+### **Alineación Perfecta con Azure NSG:**
+- ✅ **Puerto 8080**: "Allow-Port-8080-Mermeladas" → Evolution API
+- ✅ **Puerto 8090**: "mi_agente" → Nginx HTTP
+- ✅ **Puerto 8443**: "mi_agentee" → Nginx HTTPS
+- ✅ **Puerto 5432**: "PostgreSQL-5432" → Base de datos (opcional)
+
+### **Para Testing/Desarrollo:**
+- **Evolution API Docs**: `http://miagentepersonal.me:8080/docs`
+- **Logs en tiempo real**: `docker-compose logs -f`
 
 ### **Credenciales por defecto:**
 - **Usuario**: Configurar en .env (`N8N_BASIC_AUTH_USER`)

@@ -97,9 +97,10 @@ async function processMessage(message) {
     // Registrar en base de datos
     try {
         await dbClient.query(
-            'INSERT INTO comandos_log (grupo_id, usuario_id, comando, timestamp) VALUES ($1, $2, $3, $4)',
-            [groupId, sender, command, new Date()]
+            'INSERT INTO comandos_log (grupo_id, usuario, comando_original, timestamp) VALUES ($1, $2, $3, $4)',
+            [groupId, sender, messageBody, new Date()]
         );
+
     } catch (error) {
         console.error('❌ Error guardando en BD:', error);
     }

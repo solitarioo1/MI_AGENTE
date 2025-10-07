@@ -4,7 +4,11 @@ volumes:
   postgres_data:
   n8n_data:
   ollama_models:
-  whatsapp_data:
+  whatsapp_da    nginx:
+    image: nginx:alpine
+    ports:
+      - "8090:80"    # HTTP - Coincide con tu regla Azure "mi_agente"
+      - "8443:443"   # HTTPS - Coincide con tu regla Azure "mi_agentee"  evolution_data:
 
 services:
   postgres:
@@ -15,6 +19,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U n8n"]
       interval: 30s
@@ -73,9 +79,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1.5G
+          memory: 3G
         reservations:
-          memory: 800M
+          memory: 1.5G
     environment:
       - OLLAMA_MODELS=/root/.ollama
     healthcheck:
@@ -88,13 +94,14 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "8090:80"
-      - "8443:443"
+      - "8090:80"    # HTTP - Coincide con regla Azure "mi_agente" 
+      - "8443:443"   # HTTPS - Coincide con regla Azure "mi_agentee"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
+      - /etc/letsencrypt/archive/miagentepersonal.me:/etc/nginx/ssl:ro
     depends_on:
       - n8n
+      - evolution-api
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s
@@ -108,31 +115,64 @@ services:
         reservations:
           memory: 30M
 
-  # Servicio WhatsApp Bot
-  whatsapp:
-    build: ./whatsapp
+  # Servicio dummy para file server
+  file-server-dummy:
+    image: alpine:latest
+    command: ["sh", "-c", "while true; do nc -l -p 8080 -e echo OK; done"]
+    # Sin mapeo de puertos, solo accesible dentro de la red interna de Docker
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 15M
+        reservations:
+          memory: 10M
+  # Evolution API - Reemplaza el servicio whatsapp anterior
+  evolution-api:
+    image: atendai/evolution-api:latest
     depends_on:
-      - postgres
-      - n8n
-    volumes:
-      - whatsapp_data:/app/sessions
-      - ./whatsapp/.env:/app/.env:ro
+      postgres:
+        condition: service_healthy
+      file-server-dummy:
+        condition: service_started
     environment:
-      - NODE_ENV=production
+      - SERVER_PORT=8080
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://n8n:${DB_PASSWORD}@postgres:5432/evolution_db
+      - REDIS_ENABLED=false
+      - CACHE_REDIS_ENABLED=false
+      - CACHE_REDIS_URI=
+      - CACHE_LOCAL_ENABLED=true
+      - WEBHOOK_GLOBAL_URL=https://miagentepersonal.me:8443/evolution/webhook
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=evolution-api-key
+      - CONFIG_SESSION_PHONE_CLIENT=Evolution API
+      - CONFIG_SESSION_PHONE_NAME=Chrome
+      - PROVIDER_ENABLED=true
+      - PROVIDER_FILES_ENABLED=false
+      - FILE_SERVER_ENABLED=false
+      - FILES_ENABLED=false
+      - PROVIDER_FILES_TYPE=none
+      - PROVIDER_HOST=file-server-dummy
+      - PROVIDER_PORT=8080
+    # Puerto directo - Coincide con regla Azure "Allow-Port-8080-Mermeladas"
+    ports:
+      - "8080:8080"
+    volumes:
+      - evolution_data:/evolution/instances
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3
     restart: unless-stopped
-    networks:
-      - default
     deploy:
       resources:
         limits:
-          memory: 300M
+          memory: 400M
         reservations:
-          memory: 200M
+          memory: 250M
 
   # Backup automático
   backup:

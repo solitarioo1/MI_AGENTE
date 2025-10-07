@@ -1,54 +1,175 @@
-# WhatsApp con Baileys (100% Gratuito y Open Source)
+# WhatsApp con Evolution API (100% Gratuito y Robusto)
 
 ## 🎯 Configuración WhatsApp
 
-### Baileys vs Twilio
-- ✅ **Baileys**: Gratuito, ilimitado, open source
-- ❌ **Twilio**: Ahora cobra por mensajes
+### Evolution API vs Baileys
+- ✅ **Evolution API**: Gratuito, robusto, API REST completa
+- ✅ **Baileys**: Alternativa (mantenida como backup)
 
-### Instalación
-```bash
-# Baileys ya está incluido en n8n por defecto
-# Solo necesitas configurar la sesión
+### Arquitectura Actual
+```
+Evolution API (Puerto 8080) ← → Nginx Proxy ← → n8n
+     ↓
+File Server Dummy (Interno)
 ```
 
-### Configuración en n8n
+## 🚀 **URLs de Acceso**
 
-1. **Crear Workflow WhatsApp**
-2. **Nodo WhatsApp (Baileys)**
-3. **Configurar credenciales:**
-   - Session ID: `agente_session`
-   - Webhook Secret: `tu_webhook_secret`
+### **Acceso Directo (Para testing)**
+- **Evolution API**: `http://miagentepersonal.me:8090/evolution/`
+- **Manager**: `http://miagentepersonal.me:8090/evolution/manager`
+- **API Docs**: `http://miagentepersonal.me:8090/evolution/docs`
 
-### Variables .env
-```bash
-WHATSAPP_SESSION_ID=agente_session
-WHATSAPP_WEBHOOK_SECRET=tu_secret_aqui
+### **HTTPS (Producción)**
+- **Evolution API**: `https://miagentepersonal.me:8443/evolution/`
+- **Manager**: `https://miagentepersonal.me:8443/evolution/manager`
+
+## ⚙️ **Configuración Actual**
+
+### Variables Configuradas (docker-compose.yml)
+```yaml
+environment:
+  - AUTHENTICATION_TYPE=apikey
+  - AUTHENTICATION_API_KEY=evolution-api-key
+  - WEBHOOK_GLOBAL_URL=https://miagentepersonal.me:8443/evolution/webhook
+  - FILE_SERVER_ENABLED=false
+  - PROVIDER_FILES_ENABLED=false
+  - FILES_ENABLED=false
 ```
 
-### Primer Uso
-1. **Escanear QR**: Al iniciar por primera vez
-2. **Vincular WhatsApp Web**: Con tu teléfono
-3. **Sesión persistente**: Se guarda automáticamente
+### Credenciales de Acceso
+- **API Key**: `evolution-api-key`
+- **Base URL**: `https://miagentepersonal.me:8443/evolution`
 
-### Ventajas Baileys
-- 🆓 Completamente gratuito
-- 📱 Usa WhatsApp Web oficial
-- 💾 Sesiones persistentes
-- 🔄 Reconexión automática
-- 📨 Mensajes multimedia
-- 👥 Grupos y contactos
+## 📱 **Primer Uso - Crear Instancia**
 
-### APIs Disponibles
-- Enviar mensajes de texto
-- Enviar imágenes/documentos
-- Recibir mensajes
-- Estados de entrega
-- Información de contactos
-- Gestión de grupos
+### 1. Acceder al Manager
+```bash
+# Abrir en navegador:
+https://miagentepersonal.me:8443/evolution/manager
+```
 
-## 🔧 Configuración Completa
+### 2. Crear Nueva Instancia
+```json
+POST /evolution/instance/create
+{
+  "instanceName": "agente-personal",
+  "token": "evolution-api-key",
+  "qrcode": true,
+  "webhookUrl": "https://miagentepersonal.me:8443/webhook/whatsapp"
+}
+```
 
-El sistema usará Baileys automáticamente cuando configures WhatsApp en n8n. No necesitas servicios externos pagos.
+### 3. Escanear QR Code
+- Se genera automáticamente
+- Escanear con WhatsApp
+- Conexión persistente
 
-**Resultado**: WhatsApp 100% gratuito e ilimitado ✅
+## 🔧 **APIs Disponibles**
+
+### **Gestión de Instancias**
+```bash
+# Crear instancia
+POST /evolution/instance/create
+
+# Estado de instancia  
+GET /evolution/instance/connectionState/{instanceName}
+
+# QR Code
+GET /evolution/instance/qrcode/{instanceName}
+```
+
+### **Envío de Mensajes**
+```bash
+# Mensaje de texto
+POST /evolution/message/sendText/{instanceName}
+{
+  "number": "5500000000000",
+  "textMessage": {
+    "text": "Hola desde Evolution API!"
+  }
+}
+
+# Mensaje multimedia
+POST /evolution/message/sendMedia/{instanceName}
+```
+
+### **Webhooks (Recibir Mensajes)**
+- **URL**: `https://miagentepersonal.me:8443/evolution/webhook`
+- **Eventos**: messages, connection_update, qrcode_update
+
+## 🛠️ **Comandos de Testing**
+
+### **Verificar Estado**
+```bash
+# Verificar conexión Evolution API
+curl -X GET "https://miagentepersonal.me:8443/evolution/instance/connectionState/agente-personal" \
+  -H "apikey: evolution-api-key"
+
+# Health check
+curl https://miagentepersonal.me:8443/health
+```
+
+### **Crear Instancia via API**
+```bash
+curl -X POST "https://miagentepersonal.me:8443/evolution/instance/create" \
+  -H "apikey: evolution-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instanceName": "agente-personal",
+    "qrcode": true,
+    "webhookUrl": "https://miagentepersonal.me:8443/webhook/whatsapp"
+  }'
+```
+
+## 🔍 **Troubleshooting**
+
+### **Error: "No se puede acceder a este sitio"**
+```bash
+# 1. Verificar servicios
+docker-compose ps
+
+# 2. Ver logs Evolution API
+docker-compose logs evolution-api
+
+# 3. Verificar nginx proxy
+docker-compose logs nginx
+
+# 4. Test interno
+docker-compose exec nginx curl -f http://evolution-api:8080/
+```
+
+### **Soluciones Comunes**
+1. **Evolution API no inicia**: Verificar variables de entorno
+2. **Nginx no proxy**: Revisar configuración `/evolution/` route  
+3. **File server error**: Dummy está configurado correctamente
+4. **Puerto ocupado**: Evolution API usa puerto interno 8080
+
+## 🔥 **Ventajas vs Baileys**
+
+| Característica | Evolution API | Baileys |
+|---------------|---------------|---------|
+| **API REST** | ✅ Completa | ❌ Limitada |
+| **Manager Web** | ✅ Incluido | ❌ No |
+| **Multi-instancia** | ✅ Sí | ❌ No |
+| **Webhooks** | ✅ Robusto | ✅ Básico |
+| **Documentación** | ✅ Excelente | ✅ Básica |
+| **Estabilidad** | ✅ Alta | ✅ Buena |
+
+## 📊 **Monitoreo**
+
+### **Logs Evolution API**
+```bash
+# Ver logs en tiempo real
+docker-compose logs -f evolution-api
+
+# Ver últimas 50 líneas
+docker-compose logs --tail=50 evolution-api
+```
+
+### **Health Checks Configurados**
+- **Evolution API**: `curl -f http://localhost:8080/`
+- **Intervalo**: 30 segundos
+- **Reinicio automático**: Si falla health check
+
+**Resultado**: WhatsApp 100% gratuito con API REST profesional ✅
