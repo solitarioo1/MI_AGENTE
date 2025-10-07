@@ -4,11 +4,8 @@ volumes:
   postgres_data:
   n8n_data:
   ollama_models:
-  whatsapp_da    nginx:
-    image: nginx:alpine
-    ports:
-      - "8090:80"    # HTTP - Coincide con tu regla Azure "mi_agente"
-      - "8443:443"   # HTTPS - Coincide con tu regla Azure "mi_agentee"  evolution_data:
+  whatsapp_data:
+  evolution_data:
 
 services:
   postgres:
