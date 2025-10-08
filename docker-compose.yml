@@ -129,11 +129,11 @@ services:
       - CACHE_REDIS_ENABLED=false
       - CACHE_REDIS_URI=
       - CACHE_LOCAL_ENABLED=true
-      - WEBHOOK_GLOBAL_URL=https://miagentepersonal.me:8443/evolution/webhook
+      - WEBHOOK_GLOBAL_URL=${EVOLUTION_GLOBAL_WEBHOOK}
       - AUTHENTICATION_TYPE=apikey
-      - AUTHENTICATION_API_KEY=evolution-api-key
-      - CONFIG_SESSION_PHONE_CLIENT=Evolution API
-      - CONFIG_SESSION_PHONE_NAME=Chrome
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      - CONFIG_SESSION_PHONE_CLIENT=${EVOLUTION_SESSION_CLIENT}
+      - CONFIG_SESSION_PHONE_NAME=${EVOLUTION_SESSION_NAME}
       - PROVIDER_ENABLED=false
     # Puerto directo - Coincide con regla Azure "Allow-Port-8080-Mermeladas"
     ports:
