@@ -118,7 +118,7 @@ services:
     command: 
       - "sh"
       - "-c" 
-      - "while true; do nc -l -p 8080 -e echo OK; done"
+      - "while true; do echo -e 'HTTP/1.1 200 OK\\r\\nContent-Length: 2\\r\\n\\r\\nOK' | nc -l -p 8080; done"
     # Sin mapeo de puertos, solo accesible dentro de la red interna de Docker
     restart: unless-stopped
     deploy:
