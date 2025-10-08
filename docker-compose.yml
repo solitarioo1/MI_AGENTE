@@ -115,7 +115,10 @@ services:
   # Servicio dummy para file server
   file-server-dummy:
     image: alpine:latest
-    command: ["sh", "-c", "while true; do nc -l -p 8080 -e echo OK; done"]
+    command: 
+      - "sh"
+      - "-c" 
+      - "while true; do nc -l -p 8080 -e echo OK; done"
     # Sin mapeo de puertos, solo accesible dentro de la red interna de Docker
     restart: unless-stopped
     deploy:
@@ -124,6 +127,7 @@ services:
           memory: 15M
         reservations:
           memory: 10M
+
   # Evolution API - Reemplaza el servicio whatsapp anterior
   evolution-api:
     image: atendai/evolution-api:latest
