@@ -112,21 +112,7 @@ services:
         reservations:
           memory: 30M
 
-  # Servicio dummy para file server
-  file-server-dummy:
-    image: alpine:latest
-    command: 
-      - "sh"
-      - "-c" 
-      - "while true; do echo -e 'HTTP/1.1 200 OK\\r\\nContent-Length: 2\\r\\n\\r\\nOK' | nc -l -p 8080; done"
-    # Sin mapeo de puertos, solo accesible dentro de la red interna de Docker
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 15M
-        reservations:
-          memory: 10M
+
 
   # Evolution API - Reemplaza el servicio whatsapp anterior
   evolution-api:
@@ -134,8 +120,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      file-server-dummy:
-        condition: service_started
     environment:
       - SERVER_PORT=8080
       - DATABASE_ENABLED=true
@@ -150,13 +134,7 @@ services:
       - AUTHENTICATION_API_KEY=evolution-api-key
       - CONFIG_SESSION_PHONE_CLIENT=Evolution API
       - CONFIG_SESSION_PHONE_NAME=Chrome
-      - PROVIDER_ENABLED=true
-      - PROVIDER_FILES_ENABLED=false
-      - FILE_SERVER_ENABLED=false
-      - FILES_ENABLED=false
-      - PROVIDER_FILES_TYPE=none
-      - PROVIDER_HOST=file-server-dummy
-      - PROVIDER_PORT=8080
+      - PROVIDER_ENABLED=false
     # Puerto directo - Coincide con regla Azure "Allow-Port-8080-Mermeladas"
     ports:
       - "8080:8080"
