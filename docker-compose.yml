@@ -50,6 +50,7 @@ services:
       - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=America/Mexico_City
       - N8N_EDITOR_BASE_URL=https://miagentepersonal.me:8443
+      - N8N_ENABLE_PROXY_MODE=true
     ports:
       - "5678:5678"
     volumes:
